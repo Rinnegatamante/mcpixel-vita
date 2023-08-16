@@ -46,7 +46,7 @@
 #include "so_util.h"
 #include "sha1.h"
 
-//#define ENABLE_DEBUG
+// #define ENABLE_DEBUG
 
 #ifdef ENABLE_DEBUG
 #define dlog printf
@@ -564,7 +564,8 @@ extern void *__gnu_unwind_frame;
 extern void *__stack_chk_fail;
 int open(const char *pathname, int flags);
 
-static int __stack_chk_guard_fake = 0x42424242;
+static int chk_guard = 0x42424242;
+static int *__stack_chk_guard_fake = &chk_guard;
 
 static FILE __sF_fake[0x1000][3];
 
@@ -944,11 +945,13 @@ static so_default_dynlib default_dynlib[] = {
 	{ "exit", (uintptr_t)&exit },
 	{ "exp", (uintptr_t)&exp },
 	{ "exp2", (uintptr_t)&exp2 },
+	{ "exp2f", (uintptr_t)&exp2f },
 	{ "expf", (uintptr_t)&expf },
 	{ "fabsf", (uintptr_t)&fabsf },
 	{ "fclose", (uintptr_t)&fclose },
 	{ "fcntl", (uintptr_t)&ret0 },
 	// { "fdopen", (uintptr_t)&fdopen },
+	{ "feof", (uintptr_t)&feof },
 	{ "ferror", (uintptr_t)&ferror },
 	{ "fflush", (uintptr_t)&fflush },
 	{ "fgetc", (uintptr_t)&fgetc },
@@ -958,6 +961,7 @@ static so_default_dynlib default_dynlib[] = {
 	{ "floorf", (uintptr_t)&floorf },
 	{ "fmod", (uintptr_t)&fmod },
 	{ "fmodf", (uintptr_t)&fmodf },
+	{ "funopen", (uintptr_t)&funopen },
 	{ "fopen", (uintptr_t)&fopen_hook },
 	{ "open", (uintptr_t)&open_hook },
 	{ "fprintf", (uintptr_t)&fprintf },
@@ -1718,7 +1722,7 @@ void patch_game(void) {
 	hook_addr(so_symbol(&main_mod, "ffopen"), (uintptr_t)fopen_hook);
 }
 
-int main(int argc, char *argv[]) {
+void *real_main(void *argv) {
 	printf("Booting...\n");
 	//sceSysmoduleLoadModule(SCE_SYSMODULE_RAZOR_CAPTURE);
 	//SceUID crasher_thread = sceKernelCreateThread("crasher", crasher, 0x40, 0x1000, 0, 0, NULL);
@@ -1803,12 +1807,21 @@ int main(int argc, char *argv[]) {
 
 	// Disabling rearpad
 	SDL_setenv("VITA_DISABLE_TOUCH_BACK", "1", 1);
-
+	
 	int (*SDL_main)(int argc, char *argv[]) = (void *) so_symbol(&main_mod, "SDL_main");
 	
 	char *args[2];
 	args[0] = "ux0:data/mcpixel";
 	SDL_main(1, args);
+}
+
+int main(int argc, char *argv[]) {
+	pthread_t t;
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_setstacksize(&attr, 0x400000);
+	pthread_create(&t, &attr, real_main, NULL);
+	pthread_join(t, NULL);
 	
 	return 0;
 }
