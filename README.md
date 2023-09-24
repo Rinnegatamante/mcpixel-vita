@@ -9,6 +9,10 @@ By doing so, it's basically as if we emulate a minimalist Android environment in
 
 ## Changelog
 
+### v.1.1.1
+
+- Removed FuHEN logo.
+
 ### v.1.1
 
 - Fixed a stack overflow issue causing sporadic crashes when loading 3D objects in certain minigames.
