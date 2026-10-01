@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <pthread.h>
 #include <wchar.h>
 #include <wctype.h>
@@ -562,7 +563,6 @@ extern void *__cxa_finalize;
 extern void *__cxa_call_unexpected;
 extern void *__gnu_unwind_frame;
 extern void *__stack_chk_fail;
-int open(const char *pathname, int flags);
 
 static int chk_guard = 0x42424242;
 static int *__stack_chk_guard_fake = &chk_guard;
@@ -1646,7 +1646,7 @@ void *CallObjectMethodV(void *env, void *obj, int methodID, uintptr_t *args) {
 			return "en";
 		}
 	default:
-		return 0x34343434;
+		return (void *)(uintptr_t)0x34343434;
 	}
 }
 
